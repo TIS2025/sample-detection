@@ -37,6 +37,18 @@ public class ColorCameraTest extends LinearOpMode {
     double cY = 0;
     double width = 30;
 
+    double camera_x;
+    double camera_y;
+
+    public static double x_con = 0,y_con = 0;
+
+    int grid_rows=8,grid_cols=10;
+
+
+
+    int[] target = {0,0};
+    Mat grid = Mat.zeros(grid_rows,grid_cols,CvType.CV_8UC1);
+
 
     private OpenCvCamera controlHubCam;  // Use OpenCvCamera class from FTC SDK
     private static final int CAMERA_WIDTH = 640; // width  of wanted camera resolution
@@ -74,10 +86,10 @@ public class ColorCameraTest extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
 
-        DcMotorEx turret = hardwareMap.get(DcMotorEx.class, "motor1");
-        turret.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        turret.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-//        turret.setDirection(DcMotorSimple.Direction.REVERSE);
+//        DcMotorEx turret = hardwareMap.get(DcMotorEx.class, "motor1");
+//        turret.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+//        turret.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+////        turret.setDirection(DcMotorSimple.Direction.REVERSE);
 
         initOpenCV();
         FtcDashboard dashboard = FtcDashboard.getInstance();
@@ -92,10 +104,30 @@ public class ColorCameraTest extends LinearOpMode {
 
 //            timer.reset();
 //            p_error = c_error;
-            if(gamepad1.dpad_left) turret.setPower(0.5);
-            if(gamepad1.dpad_right) turret.setPower(-0.5);
+//            if(gamepad1.dpad_left) turret.setPower(0.5);
+//            if(gamepad1.dpad_right) turret.setPower(-0.5);
+//
+//            telemetry.addLine();
+//            telemetry.addData("",grid.get(0,0)[0]);
+//            telemetry.addData("|",grid.get(0,1)[0]);
+//            telemetry.addData("|",grid.get(0,2)[0]);
+//            telemetry.addLine();
+//            telemetry.addData("",grid.get(1,0)[0]);
+//            telemetry.addData("|",grid.get(1,1)[0]);
+//            telemetry.addData("|",grid.get(1,2)[0]);
+//            telemetry.addLine();
+//            telemetry.addData("",grid.get(2,0)[0]);
+//            telemetry.addData("|",grid.get(2,1)[0]);
+//            telemetry.addData("|",grid.get(2,2)[0]);
 
-            telemetry.addData("Turret Pos:", turret.getCurrentPosition());
+//            double heading[] = targetArea(target);
+//
+//            telemetry.addData("Target distance",heading[0]);
+//            telemetry.addData("Target angle",heading[1]);
+//            telemetry.addData("Xc",heading[2]);
+//            telemetry.addData("Yc",heading[3]);
+//            telemetry.addData("Target row", target[0]);
+//            telemetry.addData("Target column", target[1]);
             telemetry.update();
         }
 
@@ -104,6 +136,7 @@ public class ColorCameraTest extends LinearOpMode {
     }
 
     class SampleDetectionPipeline extends OpenCvPipeline {
+        // -1 - R, 0 - Y, 1 - B
 
         @Override
         public Mat processFrame(Mat input) {
@@ -127,24 +160,10 @@ public class ColorCameraTest extends LinearOpMode {
             MatOfPoint largestBlueContour = findLargestContour(blueContours);
             MatOfPoint largestRedContour = findLargestContour(redContours);
 
-            gridDetection(input,3,3,yellowContours,redContours,blueContours);
+            gridDetection(input,grid_rows,grid_cols,yellowContours,redContours,blueContours);
 
+            target = targetGridElement(grid,MaskColor.RED);
 
-//            if (largestYellowContour != null) drawLargestContour(input, yellowContours, largestYellowContour, MaskColor.YELLOW);
-//            if (largestRedContour != null) drawLargestContour(input, redContours, largestRedContour, MaskColor.RED);
-//            if (largestBlueContour != null) drawLargestContour(input, blueContours, largestBlueContour, MaskColor.BLUE);
-//
-//            switch (custom_flag) {
-//                case 1:
-//                    input = yellowMask;
-//                break;
-//                case 2:
-//                    input = redMask;
-//                break;
-//                case 3:
-//                    input = blueMask;
-//                break;
-//            }
             return input;
         }
 
@@ -332,18 +351,22 @@ public class ColorCameraTest extends LinearOpMode {
                     if(maxArea <= 1000) dominantColor = "None";
 
                     Scalar color = null;
+                    int col_code = 999;
 
                     switch (dominantColor) {
                         case "Blue":
-                            color = new Scalar(0, 0, 255); // Blue color
+                            color = new Scalar(0, 0, 255);
+                            col_code = 1;// Blue color
 
                             break;
                         case "Yellow":
-                            color = new Scalar(0, 255, 255); // Yellow color
+                            color = new Scalar(0, 255, 255);
+                            col_code = 0;// Yellow color
 
                             break;
                         case "Red":
-                            color = new Scalar(255, 0, 0); // Red color
+                            color = new Scalar(255, 0, 0);
+                            col_code = -1;// Red color
 
                             break;
                         case "None":
@@ -352,9 +375,9 @@ public class ColorCameraTest extends LinearOpMode {
                     }
 
                     // Draw rectangle around the grid cell with the dominant color
+                    grid.put(i,j,col_code);
                     Imgproc.rectangle(input, new Point(xStart+2, yStart+2), new Point(xEnd-2, yEnd-2), color, 2);
-                    Imgproc.putText(input, "Max:"+maxArea, new Point((double) (xStart + xEnd) /2, (double) (yStart + yEnd) /2), Imgproc.FONT_HERSHEY_COMPLEX, 0.5, new Scalar(255, 255, 255), 2);
-
+//                    Imgproc.putText(input, "Max:"+maxArea, new Point((double) (xStart + xEnd) /2, (double) (yStart + yEnd) /2), Imgproc.FONT_HERSHEY_COMPLEX, 0.5, new Scalar(255, 255, 255), 2);
                 }
             }    
 
@@ -368,6 +391,39 @@ public class ColorCameraTest extends LinearOpMode {
 //                Imgproc.line(input, new Point(0, y), new Point(imageWidth, y), new Scalar(255, 255, 255), 1);
 //            }
 
+        }
+
+        private int[] targetGridElement(Mat grid,MaskColor color) {
+            int target = 999;
+            switch (color) {
+                case RED:
+                    target = -1;
+                case BLUE:
+                    target = 1;
+                case YELLOW:
+                    target = 0;
+            }
+
+            int cols = grid.cols();
+            int rows = grid.rows();
+            int min_distance = 999;
+
+            int[] target_grid = {rows - 1, (int) (cols / 2)};
+
+            for (int i = rows - 1; i >= 2; i--) {
+                for (int j = 0; j < cols; j++) {
+                    if ((int) (grid.get(i, j)[0]) == target) {
+                        int distance = Math.abs(cols / 2 - j);
+                        if (distance < min_distance) {
+                            target_grid[0] = i;
+                            target_grid[1] = j;
+                            min_distance = distance;
+                        }
+                    }
+                }
+                if (min_distance < 999) break;
+            }
+            return target_grid;
         }
 
         public double contourAreaInCell(MatOfPoint contour, Rect cellROI) {
@@ -471,14 +527,25 @@ public class ColorCameraTest extends LinearOpMode {
                 hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
 
 //        controlHubCam.setPipeline(new SampleDetectionPipeline());
-        controlHubCam.setPipeline(new SampleDetectionPipeline());
+        controlHubCam.setPipeline(new RedBlueDetectionPipelineNoPNP());
 
         controlHubCam.openCameraDevice();
-        controlHubCam.startStreaming(CAMERA_WIDTH, CAMERA_HEIGHT, OpenCvCameraRotation.UPSIDE_DOWN);
+        controlHubCam.startStreaming(CAMERA_WIDTH, CAMERA_HEIGHT, OpenCvCameraRotation.UPRIGHT);
     }
 
     private double turretPID(double cError, double pError) {
         return Kp*c_error + Kd*(cError-pError)/(timer.seconds());
+    }
+
+    private double[] targetArea(int[] target){
+        //Center of rectangle
+        double x_c = (grid_rows-0.5-target[0]) /grid_rows*CAMERA_HEIGHT;
+        double y_c = (double) (target[1] - ((grid_cols-1.0)/2)) /grid_cols*CAMERA_WIDTH*(1 + 1.5*(x_c/CAMERA_HEIGHT));
+
+        double angle = Math.atan2(y_c+y_con,x_c+x_con)*180/Math.PI;
+        double distance = Math.sqrt(Math.pow(x_c + x_con,2) + Math.pow(y_c+y_con,2));
+
+        return new double[]{distance,angle,x_c,y_c};
     }
 
     private static double getDistance(double width) {

@@ -1,10 +1,17 @@
 package org.firstinspires.ftc.teamcode;
 
+import androidx.annotation.NonNull;
+
 import com.acmerobotics.dashboard.config.Config;
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
 import com.acmerobotics.roadrunner.Action;
+import com.acmerobotics.roadrunner.InstantAction;
+import com.acmerobotics.roadrunner.InstantFunction;
 import com.acmerobotics.roadrunner.SequentialAction;
+import com.acmerobotics.roadrunner.SleepAction;
+import com.acmerobotics.roadrunner.Trajectory;
 import com.acmerobotics.roadrunner.TrajectoryActionBuilder;
-import com.arcrobotics.ftclib.trajectory.Trajectory;
+import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -12,6 +19,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Gamepad;
+import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.hardware.Servo;
 
@@ -49,8 +57,8 @@ public class ColorSensorTest extends LinearOpMode {
         NormalizedRGBA rgba;
         float[] hsv;
         double distance;
-        Servo gripper = hardwareMap.get(Servo.class, "gripper");
-        gripper.setPosition(0.4);
+//        Servo gripper = hardwareMap.get(Servo.class, "gripper");
+//        gripper.setPosition(0.4);
         colorSensor.setGain((float)gain);
 
         Servo wrist = hardwareMap.get(Servo.class, "wrist");
@@ -59,20 +67,22 @@ public class ColorSensorTest extends LinearOpMode {
         Servo elbow = hardwareMap.get(Servo.class, "elbow");
         elbow.setPosition(0.5);
 
-        DcMotorEx lift = hardwareMap.get(DcMotorEx.class,"motor1");
-        lift.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        lift.setDirection(DcMotorSimple.Direction.REVERSE);
-        lift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-
         Gamepad C1 = new Gamepad();
         Gamepad P1 = new Gamepad();
 
         Gamepad C2 = new Gamepad();
         Gamepad P2 = new Gamepad();
 
-        Trajectory pickupSample = TrajectoryActionBuilder(
-                new SequentialAction(()->)
-        )
+
+        Lift lift = new Lift(hardwareMap);
+
+        Gripper gripper = new Gripper(hardwareMap);
+//        Trajectory pickupSample = TrajectoryActionBuilder(
+//
+//                lift.SamplePick(),
+//                        new SleepAction(200),
+//                        gripper.CloseGripper()
+//                );
 
         waitForStart();
         while (opModeIsActive()) {
@@ -83,19 +93,19 @@ public class ColorSensorTest extends LinearOpMode {
             P2.copy(C2);
             C2.copy(gamepad2);
 
-            if(C1.dpad_up && !P1.dpad_up) {
-                lift_height+=10;
-                lift.setTargetPosition(lift_height);
-                lift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                lift.setPower(0.8);
-            }
-
-            if(C1.dpad_down && !P1.dpad_down) {
-                lift_height-=10;
-                lift.setTargetPosition(lift_height);
-                lift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-                lift.setPower(0.8);
-            }
+//            if(C1.dpad_up && !P1.dpad_up) {
+//                lift_height+=10;
+//                lift.setTargetPosition(lift_height);
+//                lift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+//                lift.setPower(0.8);
+//            }
+//
+//            if(C1.dpad_down && !P1.dpad_down) {
+//                lift_height-=10;
+//                lift.setTargetPosition(lift_height);
+//                lift.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+//                lift.setPower(0.8);
+//            }
 
             if(C1.left_bumper && !P1.left_bumper) elbow.setPosition(elbow.getPosition()+0.05);
             if(C1.right_bumper && !P1.right_bumper) elbow.setPosition(elbow.getPosition()-0.05);
@@ -112,10 +122,20 @@ public class ColorSensorTest extends LinearOpMode {
             //Color test conditions
             if((hsv[0]<redHigh && hsv[0]>redLow && hsv[1]<satLimit)||
                (hsv[0]<blueHigh && hsv[0]>blueLow && hsv[1]<satLimit))
-                {gripper.setPosition(0.15);}
+                {
+                    Actions.runBlocking(
+                            new SequentialAction(
+                                    lift.SamplePick(),
+                                    new SleepAction(3),
+                                    gripper.CloseGripper()
+                            )
+                    );
+                }
 
             if(C1.a){
-                gripper.setPosition(0.4);
+                Actions.runBlocking(
+                        gripper.OpenGripper()
+                );
             }
 
             telemetry.addLine()
@@ -127,13 +147,11 @@ public class ColorSensorTest extends LinearOpMode {
                     .addData("Saturation", hsv[1])
                     .addData("Value", hsv[2]);
             telemetry.addLine().addData("Distance",distance);
-            telemetry.addLine().addData("Lift height:",lift.getCurrentPosition());
+            telemetry.addLine().addData("Lift height:",lift.lift.getCurrentPosition());
 
             telemetry.update();
         }
     }
-
-
 
     private float[] rgbToHsv(float rNorm, float gNorm, float bNorm) {
         float[] hsv = new float[3];
