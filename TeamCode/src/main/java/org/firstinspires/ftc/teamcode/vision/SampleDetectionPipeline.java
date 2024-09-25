@@ -38,8 +38,8 @@ class SampleDetectionPipeline extends OpenCvPipeline {
     private static final int CAMERA_HEIGHT = 480; // height of wanted camera resolution
 
     // Calculate the distance using the formula
-    public static final double objectWidthInRealWorldUnits = 1.4845;  // Replace with the actual width of the object in real-world units
-    public static final double focalLength = 462.24;  //
+//    public static final double objectWidthInRealWorldUnits = 1.4845;  // Replace with the actual width of the object in real-world units
+//    public static final double focalLength = 462.24;  //
 
     public static Scalar highRed = new Scalar(130, 255, 255);
     public static Scalar lowRed = new Scalar(120, 70, 50);
@@ -48,15 +48,19 @@ class SampleDetectionPipeline extends OpenCvPipeline {
     public static Scalar highYellow = new Scalar(100, 255, 255);
     public static Scalar lowYellow = new Scalar(90, 70, 50);
 
-    public static int custom_flag = 1;
+//    public static int custom_flag = 1;
     public static int r_width = 100;
 
 
-    public static double Kp = 0.0;
-    public static double Ki = 0.0;
-    public static double Kd = 0.0;
-    public double c_error = 0.0;
-    public double p_error = 0.0;
+//    public static double Kp = 0.0;
+//    public static double Ki = 0.0;
+//    public static double Kd = 0.0;
+//    public double c_error = 0.0;
+//    public double p_error = 0.0;
+
+//    public SampleDetectionPipeline(){
+//
+//    }
 
     public enum MaskColor {
         YELLOW,

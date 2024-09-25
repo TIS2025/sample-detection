@@ -7,10 +7,11 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.teamcode.vision.RedBlueDetectionPipelineNoPNP;
+import org.firstinspires.ftc.teamcode.vision.SampleMarkingPipeline;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
@@ -27,7 +28,6 @@ import org.openftc.easyopencv.OpenCvCameraRotation;
 import org.openftc.easyopencv.OpenCvPipeline;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 @TeleOp(name = "Camera Test")
@@ -44,10 +44,14 @@ public class ColorCameraTest extends LinearOpMode {
 
     int grid_rows=8,grid_cols=10;
 
-
+    SampleMarkingPipeline pipeline = new SampleMarkingPipeline();
 
     int[] target = {0,0};
     Mat grid = Mat.zeros(grid_rows,grid_cols,CvType.CV_8UC1);
+
+    double gripper_x_offset = 6;
+    double gripper_y_offset = 7;
+
 
 
     private OpenCvCamera controlHubCam;  // Use OpenCvCamera class from FTC SDK
@@ -86,434 +90,39 @@ public class ColorCameraTest extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
 
-//        DcMotorEx turret = hardwareMap.get(DcMotorEx.class, "motor1");
-//        turret.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-//        turret.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-////        turret.setDirection(DcMotorSimple.Direction.REVERSE);
+        DcMotorEx turret = hardwareMap.get(DcMotorEx.class, "motor1");
+        turret.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        turret.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+//        turret.setDirection(DcMotorSimple.Direction.REVERSE);
 
         initOpenCV();
         FtcDashboard dashboard = FtcDashboard.getInstance();
         telemetry = new MultipleTelemetry(telemetry, dashboard.getTelemetry());
         FtcDashboard.getInstance().startCameraStream(controlHubCam, 30);
 
+        double fx = 0;
+        double fy = 0;
+
 
         waitForStart();
 
         while (opModeIsActive()) {
-//            turret.setPower(turretPID(c_error,p_error));
 
-//            timer.reset();
-//            p_error = c_error;
-//            if(gamepad1.dpad_left) turret.setPower(0.5);
-//            if(gamepad1.dpad_right) turret.setPower(-0.5);
-//
-//            telemetry.addLine();
-//            telemetry.addData("",grid.get(0,0)[0]);
-//            telemetry.addData("|",grid.get(0,1)[0]);
-//            telemetry.addData("|",grid.get(0,2)[0]);
-//            telemetry.addLine();
-//            telemetry.addData("",grid.get(1,0)[0]);
-//            telemetry.addData("|",grid.get(1,1)[0]);
-//            telemetry.addData("|",grid.get(1,2)[0]);
-//            telemetry.addLine();
-//            telemetry.addData("",grid.get(2,0)[0]);
-//            telemetry.addData("|",grid.get(2,1)[0]);
-//            telemetry.addData("|",grid.get(2,2)[0]);
+            if(!pipeline.RedSampleList.isEmpty()){
+                telemetry.addData("Red size",pipeline.RedSampleList.size());
+                fx = pipeline.RedSampleList.get(0).field_pos.x;
+                fy = pipeline.RedSampleList.get(0).field_pos.y;
+            }
 
-//            double heading[] = targetArea(target);
-//
-//            telemetry.addData("Target distance",heading[0]);
-//            telemetry.addData("Target angle",heading[1]);
-//            telemetry.addData("Xc",heading[2]);
-//            telemetry.addData("Yc",heading[3]);
-//            telemetry.addData("Target row", target[0]);
-//            telemetry.addData("Target column", target[1]);
+            telemetry.addData("Field x",fx);
+            telemetry.addData("Field y",fy);
+
+//            telemetry.addData("Blue size",pipeline.BlueSampleList.size());
             telemetry.update();
         }
 
         // Release resources
         controlHubCam.stopStreaming();
-    }
-
-    class SampleDetectionPipeline extends OpenCvPipeline {
-        // -1 - R, 0 - Y, 1 - B
-
-        @Override
-        public Mat processFrame(Mat input) {
-            // Preprocess the frame to detect regions
-            Mat yellowMask = preprocessFrame(input, lowYellow, highYellow);
-            Mat redMask = preprocessFrame(input, lowRed, highRed);
-            Mat blueMask = preprocessFrame(input, lowBlue, highBlue);
-
-            // Find contours of the detected regions
-            List<MatOfPoint> yellowContours = findContours(yellowMask);
-            List<MatOfPoint> redContours = findContours(redMask);
-            List<MatOfPoint> blueContours = findContours(blueMask);
-
-            // Display all contours
-            drawAllContours(input,yellowContours,MaskColor.YELLOW);
-            drawAllContours(input,blueContours,MaskColor.BLUE);
-            drawAllContours(input,redContours,MaskColor.RED);
-
-            // Find the largest contours (blob)
-            MatOfPoint largestYellowContour = findLargestContour(yellowContours);
-            MatOfPoint largestBlueContour = findLargestContour(blueContours);
-            MatOfPoint largestRedContour = findLargestContour(redContours);
-
-            gridDetection(input,grid_rows,grid_cols,yellowContours,redContours,blueContours);
-
-            target = targetGridElement(grid,MaskColor.RED);
-
-            return input;
-        }
-
-        private Mat preprocessFrame(Mat frame, Scalar low, Scalar high) {
-            Mat hsvFrame = new Mat();
-            Imgproc.cvtColor(frame, hsvFrame, Imgproc.COLOR_BGR2HSV);
-
-            Mat Mask = new Mat();
-            Core.inRange(hsvFrame, low, high, Mask);
-
-            Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(5, 5));
-            Imgproc.morphologyEx(Mask, Mask, Imgproc.MORPH_OPEN, kernel);
-            Imgproc.morphologyEx(Mask, Mask, Imgproc.MORPH_CLOSE, kernel);
-
-            return Mask;
-        }
-
-        private List<MatOfPoint> findContours(Mat mask) {
-            List<MatOfPoint> contours = new ArrayList<>();
-            Mat hierarchy = new Mat();
-            Imgproc.findContours(mask, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
-
-            return contours;
-        }
-
-        private MatOfPoint findLargestContour(List<MatOfPoint> contours) {
-            double maxArea = 0;
-            MatOfPoint largestContour = null;
-
-            for (MatOfPoint contour : contours) {
-                double area = Imgproc.contourArea(contour);
-                if (area > maxArea) {
-                    maxArea = area;
-                    largestContour = contour;
-                }
-            }
-            return largestContour;
-        }
-
-        private void drawLargestContour(Mat input, List<MatOfPoint> contours, MatOfPoint largestContour, MaskColor maskColor) {
-            // Draw a green outline around the largest detected object
-            String obj_color = "";
-
-            switch (maskColor) {
-                case RED:
-                    obj_color = "Red";
-                    break;
-                case BLUE:
-                    obj_color = "Blue";
-                    break;
-                case YELLOW:
-                    obj_color = "Yellow";
-                    break;
-            }
-
-            Imgproc.drawContours(input, contours,
-                    contours.indexOf(largestContour),
-                    new Scalar(0, 255, 0), 2);
-
-            // Calculate the width of the bounding box
-            width = calculateWidth(largestContour);
-
-//             Display the width next to the label
-            String widthLabel = "Width: " + (int) width + " pixels";
-            Imgproc.putText(input, widthLabel, new Point(cX + 10, cY + 60), Imgproc.FONT_HERSHEY_SIMPLEX, 0.5, new Scalar(0, 255, 0), 2);
-
-//            Display the Distance
-            String distanceLabel = "Distance: " + String.format("%.2f", getDistance(width)) + " inches";
-            Imgproc.putText(input, distanceLabel, new Point(cX + 10, cY + 80), Imgproc.FONT_HERSHEY_SIMPLEX, 0.5, new Scalar(0, 255, 0), 2);
-
-
-            // Calculate the centroid of the largest contour
-            Moments moments = Imgproc.moments(largestContour);
-            cX = moments.get_m10() / moments.get_m00();
-            cY = moments.get_m01() / moments.get_m00();
-
-            c_error = Math.atan((cX - CAMERA_WIDTH / 2)*180/getDistance(width)/17.74/Math.PI);
-
-            // Draw a dot at the centroid
-            String label = "(" + (int) cX + ", " + (int) cY + ")";
-            Imgproc.putText(input, label, new Point(cX + 10, cY), Imgproc.FONT_HERSHEY_COMPLEX, 0.5, new Scalar(0, 255, 0), 2);
-            Imgproc.circle(input, new Point(cX, cY), 5, new Scalar(0, 255, 0), -1);
-
-            String areaLabel = "Area: " + String.valueOf((int) moments.get_m00());
-            Imgproc.putText(input, areaLabel, new Point(cX + 10, cY + 20), Imgproc.FONT_HERSHEY_SIMPLEX, 0.5, new Scalar(0, 255, 0), 2);
-
-            // Display the object color
-            Imgproc.putText(input, obj_color, new Point(cX + 10, cY + 40), Imgproc.FONT_HERSHEY_SIMPLEX, 0.5, new Scalar(0, 255, 0), 2);
-
-            Imgproc.rectangle(input,
-                    new Point(CAMERA_WIDTH / 2 - r_width, CAMERA_HEIGHT),
-                    new Point(CAMERA_WIDTH / 2 + r_width, 0),
-                    new Scalar(255, 255, 255),
-                    1,
-                    8,
-                    0);
-        }
-
-        private void drawAllContours(Mat input, List<MatOfPoint> contours, MaskColor maskColor){
-            String obj_color = (maskColor == MaskColor.RED) ? "R" :
-                    (maskColor == MaskColor.BLUE) ? "B" :
-                            (maskColor == MaskColor.YELLOW) ? "Y" : "";
-
-            for (MatOfPoint contour:contours){
-
-                Moments moments = Imgproc.moments(contour);
-                int area = (int) moments.get_m00();
-                cX = moments.get_m10() / area;
-                cY = moments.get_m01() / area;
-
-//                if (area>400 && cY>50 && cY<315) {
-                    // Draw a green outline around the contour object
-                    Imgproc.drawContours(input, contours,
-                            contours.indexOf(contour),
-                            new Scalar(0, 255, 0), 2);
-
-                    // Draw a dot at the centroid
-                    String label = "(" + (int) cX + ", " + (int) cY + ")";
-                    Imgproc.putText(input, label, new Point(cX + 10, cY), Imgproc.FONT_HERSHEY_COMPLEX, 0.5, new Scalar(0, 255, 0), 2);
-                    Imgproc.circle(input, new Point(cX, cY), 5, new Scalar(0, 255, 0), -1);
-
-                    // Calculate area and write it
-                    String areaLabel = "Area: " + String.valueOf((int) moments.get_m00());
-                    Imgproc.putText(input, areaLabel, new Point(cX + 10, cY + 20), Imgproc.FONT_HERSHEY_SIMPLEX, 0.5, new Scalar(0, 255, 0), 2);
-
-                    // Display the contour color
-                    Imgproc.putText(input, obj_color, new Point(cX + 10, cY + 40), Imgproc.FONT_HERSHEY_SIMPLEX, 0.5, new Scalar(0, 0, 0), 2);
-//                }
-            }
-        }
-
-        private void gridDetection(Mat input, int rows, int columns,List<MatOfPoint> yellowContours,List<MatOfPoint> redContours, List<MatOfPoint> blueContours) {
-            int imageHeight = input.rows();
-            int imageWidth = input.cols();
-
-            int cellHeight = imageHeight / rows;
-            int cellWidth = imageWidth / columns;
-
-            // Iterating over the grid
-            for (int i = 0; i < rows; i++) {
-                for (int j = 0; j < columns; j++) {
-                    // Define the ROI (Region of Interest) for the current cell
-                    int xStart = j * cellWidth;
-                    int yStart = i * cellHeight;
-                    int xEnd = Math.min(xStart + cellWidth, imageWidth);
-                    int yEnd = Math.min(yStart + cellHeight, imageHeight);
-
-                    Rect gridCell = new Rect(xStart, yStart, xEnd - xStart, yEnd - yStart);
-
-                    double blueArea = 0;
-                    double yellowArea = 0;
-                    double redArea = 0;
-
-                    for (MatOfPoint contour : blueContours) {
-                        Moments moments = Imgproc.moments(contour);
-                        double x = moments.get_m10() / moments.get_m00();
-                        double y = moments.get_m01() / moments.get_m00();
-
-                        if(gridCell.contains(new Point(x,y))) blueArea += moments.get_m00();
-                    }
-
-                    for (MatOfPoint contour : yellowContours) {
-                        Moments moments = Imgproc.moments(contour);
-                        double x = moments.get_m10() / moments.get_m00();
-                        double y = moments.get_m01() / moments.get_m00();
-
-                        if(gridCell.contains(new Point(x,y))) yellowArea += moments.get_m00();
-                    }
-
-                    for (MatOfPoint contour : redContours) {
-                        Moments moments = Imgproc.moments(contour);
-                        double x = moments.get_m10() / moments.get_m00();
-                        double y = moments.get_m01() / moments.get_m00();
-
-                        if(gridCell.contains(new Point(x,y))) redArea += moments.get_m00();
-                    }
-
-                    String dominantColor = "None";
-                    double maxArea = Math.max(blueArea, Math.max(yellowArea, redArea));
-
-                    if (maxArea == blueArea) dominantColor = "Blue";
-                    else if (maxArea == yellowArea) dominantColor = "Yellow";
-                    else if (maxArea == redArea) dominantColor = "Red";
-
-                    if(maxArea <= 1000) dominantColor = "None";
-
-                    Scalar color = null;
-                    int col_code = 999;
-
-                    switch (dominantColor) {
-                        case "Blue":
-                            color = new Scalar(0, 0, 255);
-                            col_code = 1;// Blue color
-
-                            break;
-                        case "Yellow":
-                            color = new Scalar(0, 255, 255);
-                            col_code = 0;// Yellow color
-
-                            break;
-                        case "Red":
-                            color = new Scalar(255, 0, 0);
-                            col_code = -1;// Red color
-
-                            break;
-                        case "None":
-                            color = new Scalar(255, 255, 255); // Default color (White for no dominant color)
-                            break;
-                    }
-
-                    // Draw rectangle around the grid cell with the dominant color
-                    grid.put(i,j,col_code);
-                    Imgproc.rectangle(input, new Point(xStart+2, yStart+2), new Point(xEnd-2, yEnd-2), color, 2);
-//                    Imgproc.putText(input, "Max:"+maxArea, new Point((double) (xStart + xEnd) /2, (double) (yStart + yEnd) /2), Imgproc.FONT_HERSHEY_COMPLEX, 0.5, new Scalar(255, 255, 255), 2);
-                }
-            }    
-
-//            // Vertical lines for the grid
-//            for (int x = 0; x <= imageWidth; x += cellWidth) {
-//                Imgproc.line(input, new Point(x, 0), new Point(x, imageHeight), new Scalar(255, 255, 255), 1);
-//            }
-//
-//            // Horizontal lines for the grid
-//            for (int y = 0; y <= imageHeight; y += cellHeight) {
-//                Imgproc.line(input, new Point(0, y), new Point(imageWidth, y), new Scalar(255, 255, 255), 1);
-//            }
-
-        }
-
-        private int[] targetGridElement(Mat grid,MaskColor color) {
-            int target = 999;
-            switch (color) {
-                case RED:
-                    target = -1;
-                case BLUE:
-                    target = 1;
-                case YELLOW:
-                    target = 0;
-            }
-
-            int cols = grid.cols();
-            int rows = grid.rows();
-            int min_distance = 999;
-
-            int[] target_grid = {rows - 1, (int) (cols / 2)};
-
-            for (int i = rows - 1; i >= 2; i--) {
-                for (int j = 0; j < cols; j++) {
-                    if ((int) (grid.get(i, j)[0]) == target) {
-                        int distance = Math.abs(cols / 2 - j);
-                        if (distance < min_distance) {
-                            target_grid[0] = i;
-                            target_grid[1] = j;
-                            min_distance = distance;
-                        }
-                    }
-                }
-                if (min_distance < 999) break;
-            }
-            return target_grid;
-        }
-
-        public double contourAreaInCell(MatOfPoint contour, Rect cellROI) {
-            // Create a mask for the cell ROI
-            Mat mask = Mat.zeros(cellROI.size(), CvType.CV_8UC1);
-
-            // Offset the contour points to the current ROI
-            MatOfPoint contourOffset = new MatOfPoint();
-            for (Point point : contour.toArray()) {
-                if (cellROI.contains(point)) {
-                    contourOffset.push_back(new MatOfPoint(new Point(point.x - cellROI.x, point.y - cellROI.y)));
-                }
-            }
-
-            // Calculate the contour area within the mask
-            return Core.countNonZero(mask);
-        }
-
-        public boolean contourOverlapsWithCell(MatOfPoint contour, Rect cellROI) {
-            for (Point point : contour.toArray()) {
-                if (cellROI.contains(point)) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        private double calculateWidth(MatOfPoint contour) {
-            Rect boundingRect = Imgproc.boundingRect(contour);
-            return boundingRect.width;
-        }
-    }
-
-    class EdgeDetectionPipeline extends OpenCvPipeline{
-
-        @Override
-        public Mat processFrame(Mat input) {
-            Mat gray = preProcess(input);
-
-            Mat edges = detectEdges(gray);
-
-            List<MatOfPoint> lines = detectLines(edges);
-
-            return drawLines(input, lines);
-        }
-
-        private Mat preProcess(Mat src) {
-            Mat gray = new Mat();
-            // Convert the image to grayscale
-            Imgproc.cvtColor(src, gray, Imgproc.COLOR_BGR2GRAY);
-            // Apply Gaussian blur to smooth the image
-            Imgproc.GaussianBlur(gray, gray, new Size(5, 5), 0);
-            return gray;
-        }
-
-        private Mat detectEdges(Mat gray) {
-            Mat edges = new Mat();
-            // Apply Canny Edge Detection
-            Imgproc.Canny(gray, edges, 50, 150);
-            return edges;
-        }
-
-        private List<MatOfPoint> detectLines(Mat edges) {
-            Mat lines = new Mat();
-            List<MatOfPoint> linePoints = new ArrayList<>();
-            // Detect lines using Hough Line Transform
-            Imgproc.HoughLinesP(edges, lines, 1, Math.PI / 180, 100, 50, 10);
-
-            for (int i = 0; i < lines.rows(); i++) {
-                double[] line = lines.get(i, 0);
-                Point pt1 = new Point(line[0], line[1]);
-                Point pt2 = new Point(line[2], line[3]);
-
-                double angle = Math.atan2(pt2.y - pt1.y, pt2.x - pt1.x);
-
-                if (Math.abs(angle) < Math.PI / 18) { // pi/18 ~ 10 degrees tolerance for horizontal lines
-                    linePoints.add(new MatOfPoint(pt1, pt2));
-                }
-            }
-            return linePoints;
-        }
-
-        private Mat drawLines(Mat src, List<MatOfPoint> lines) {
-            for (MatOfPoint line : lines) {
-                Point[] points = line.toArray();
-                // Draw each line segment on the source image
-                Imgproc.line(src, points[0], points[1], new Scalar(0, 255, 0), 3);
-            }
-            return src;
-        }
     }
 
     private void initOpenCV() {
@@ -527,25 +136,10 @@ public class ColorCameraTest extends LinearOpMode {
                 hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
 
 //        controlHubCam.setPipeline(new SampleDetectionPipeline());
-        controlHubCam.setPipeline(new RedBlueDetectionPipelineNoPNP());
+        controlHubCam.setPipeline(pipeline);
 
         controlHubCam.openCameraDevice();
-        controlHubCam.startStreaming(CAMERA_WIDTH, CAMERA_HEIGHT, OpenCvCameraRotation.UPRIGHT);
-    }
-
-    private double turretPID(double cError, double pError) {
-        return Kp*c_error + Kd*(cError-pError)/(timer.seconds());
-    }
-
-    private double[] targetArea(int[] target){
-        //Center of rectangle
-        double x_c = (grid_rows-0.5-target[0]) /grid_rows*CAMERA_HEIGHT;
-        double y_c = (double) (target[1] - ((grid_cols-1.0)/2)) /grid_cols*CAMERA_WIDTH*(1 + 1.5*(x_c/CAMERA_HEIGHT));
-
-        double angle = Math.atan2(y_c+y_con,x_c+x_con)*180/Math.PI;
-        double distance = Math.sqrt(Math.pow(x_c + x_con,2) + Math.pow(y_c+y_con,2));
-
-        return new double[]{distance,angle,x_c,y_c};
+        controlHubCam.startStreaming(CAMERA_WIDTH, CAMERA_HEIGHT, OpenCvCameraRotation.UPSIDE_DOWN);
     }
 
     private static double getDistance(double width) {

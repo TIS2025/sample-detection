@@ -73,10 +73,6 @@ public class ColorSensorTest extends LinearOpMode {
         Gamepad C2 = new Gamepad();
         Gamepad P2 = new Gamepad();
 
-
-        Lift lift = new Lift(hardwareMap);
-
-        Gripper gripper = new Gripper(hardwareMap);
 //        Trajectory pickupSample = TrajectoryActionBuilder(
 //
 //                lift.SamplePick(),
@@ -123,19 +119,11 @@ public class ColorSensorTest extends LinearOpMode {
             if((hsv[0]<redHigh && hsv[0]>redLow && hsv[1]<satLimit)||
                (hsv[0]<blueHigh && hsv[0]>blueLow && hsv[1]<satLimit))
                 {
-                    Actions.runBlocking(
-                            new SequentialAction(
-                                    lift.SamplePick(),
-                                    new SleepAction(3),
-                                    gripper.CloseGripper()
-                            )
-                    );
+                    //Action
                 }
 
             if(C1.a){
-                Actions.runBlocking(
-                        gripper.OpenGripper()
-                );
+                //Action
             }
 
             telemetry.addLine()
@@ -147,7 +135,6 @@ public class ColorSensorTest extends LinearOpMode {
                     .addData("Saturation", hsv[1])
                     .addData("Value", hsv[2]);
             telemetry.addLine().addData("Distance",distance);
-            telemetry.addLine().addData("Lift height:",lift.lift.getCurrentPosition());
 
             telemetry.update();
         }
