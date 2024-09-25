@@ -63,28 +63,36 @@ public final class MecanumDrive {
                 RevHubOrientationOnRobot.UsbFacingDirection.FORWARD;
 
         // drive model parameters
-        public double inPerTick = 7.1783641848485152186331793263111e-4;
+        public double inPerTick = 0.0326975476839237;
+//        7.1783641848485152186331793263111e-4
         public double lateralInPerTick = inPerTick;
-        public double trackWidthTicks = 15350.730629469304;
+        public double trackWidthTicks = 673.5106820455135;
+//            15350.730629469304;
 
         // feedforward parameters (in tick units)
-        public double kS = 1.5345243761584144;
-        public double kV = 0.00010833750528736253;
-        public double kA = 0.000018;
+        public double kS = 1.506204067400276;
+//            1.5345243761584144;
+        public double kV = 0.004323361707722842;
+//            0.00010833750528736253;
+        public double kA = 0.00056;
+//            0.000018;
 
         // path profile parameters (in inches)
-        public double maxWheelVel = 50;
+        public double maxWheelVel = 60;
         public double minProfileAccel = -30;
-        public double maxProfileAccel = 50;
+        public double maxProfileAccel = 60;
 
         // turn profile parameters (in radians)
         public double maxAngVel = Math.PI; // shared with path
         public double maxAngAccel = Math.PI;
 
         // path controller gains
-        public double axialGain = 8;
-        public double lateralGain = 12.0;
-        public double headingGain = 10.0; // shared with turn
+        public double axialGain = 6;
+//                8;
+        public double lateralGain = 9;
+//        12.0;
+        public double headingGain = 8;
+//        10.0; // shared with turn
 
         public double axialVelGain = 0.5;
         public double lateralVelGain = 0.5;
@@ -218,8 +226,8 @@ public final class MecanumDrive {
         // TODO: make sure your config has motors with these names (or change them)
         //   see https://ftc-docs.firstinspires.org/en/latest/hardware_and_software_configuration/configuring/index.html
         leftFront = hardwareMap.get(DcMotorEx.class, "leftFront");
-        leftBack = hardwareMap.get(DcMotorEx.class, "leftBack");
-        rightBack = hardwareMap.get(DcMotorEx.class, "rightBack");
+        leftBack = hardwareMap.get(DcMotorEx.class, "leftRear");
+        rightBack = hardwareMap.get(DcMotorEx.class, "rightRear");
         rightFront = hardwareMap.get(DcMotorEx.class, "rightFront");
 
         leftFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -238,7 +246,8 @@ public final class MecanumDrive {
 
         voltageSensor = hardwareMap.voltageSensor.iterator().next();
 
-        localizer = new TwoDeadWheelLocalizer(hardwareMap, lazyImu.get(), PARAMS.inPerTick);
+//        localizer = new TwoDeadWheelLocalizer(hardwareMap, lazyImu.get(), PARAMS.inPerTick);
+        localizer = new DriveLocalizer();
 
         FlightRecorder.write("MECANUM_PARAMS", PARAMS);
     }
