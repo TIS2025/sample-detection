@@ -47,8 +47,8 @@ public class Object_track extends LinearOpMode {
     private final FtcDashboard dash = FtcDashboard.getInstance();
     SampleMarkingPipeline pipeline = new SampleMarkingPipeline();
 
-    private static final int CAMERA_WIDTH = 640; // width  of wanted camera resolution
-    private static final int CAMERA_HEIGHT = 480; // height of wanted camera resolution
+    private static final int CAMERA_WIDTH = 1280; // width  of wanted camera resolution
+    private static final int CAMERA_HEIGHT = 960; // height of wanted camera resolution
 
     Gamepad C1 = new Gamepad();
     Gamepad P1 = new Gamepad();
@@ -145,7 +145,7 @@ public class Object_track extends LinearOpMode {
 
             if(C1.x && !P1.x && isFrameCaptured){
                 Actions.runBlocking(drive.actionBuilder(drive.pose)
-                        .turn(servo_and_heading[1])
+//                        .turn(servo_and_heading[1])
                         .afterTime(1,
                                 new SequentialAction(
                                         new InstantAction(()->intake.setElbow(servo_and_heading[0])),

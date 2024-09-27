@@ -2,6 +2,8 @@ package org.firstinspires.ftc.teamcode.Hardware;
 
 import com.acmerobotics.dashboard.config.Config;
 
+import org.opencv.core.Scalar;
+
 @Config
 public class Globals {
 

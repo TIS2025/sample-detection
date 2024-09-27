@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.vision;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
+import org.firstinspires.ftc.teamcode.Hardware.Globals;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
@@ -20,23 +21,21 @@ import java.util.List;
 
 public class SampleMarkingPipeline extends OpenCvPipeline {
 
-    //Color thresholds
-    public static Scalar highRed = new Scalar(130, 255, 255);
-    public static Scalar lowRed = new Scalar(120, 70, 50);
-    public static Scalar highBlue = new Scalar(30, 255, 255);
-    public static Scalar lowBlue = new Scalar(0, 50, 30);//70,50
-    public static Scalar highYellow = new Scalar(100, 255, 255);
-    public static Scalar lowYellow = new Scalar(90, 70, 50);
-
     //Telemetry
 
     //Submersible
-    Point top_left = new Point(222, 141);
-    Point top_right = new Point(418, 141);
-    Point bottom_left = new Point(0, 335);
-    Point bottom_right = new Point(640, 335);
-    Point mid_left = new Point(168,188);
-    Point mid_right = new Point(472,188);
+//    Point top_left = new Point(222, 141);
+//    Point top_right = new Point(418, 141);
+//    Point bottom_left = new Point(0, 335);
+//    Point bottom_right = new Point(640, 335);
+//    Point mid_left = new Point(168,188);
+//    Point mid_right = new Point(472,188);
+    Point top_left = new Point(444, 282);
+    Point top_right = new Point(836, 282);
+    Point bottom_left = new Point(0, 670);
+    Point bottom_right = new Point(1280, 670);
+    Point mid_left = new Point(336,376);
+    Point mid_right = new Point(944,376);
 
     Point[] points = new Point[]{
             top_left,
@@ -53,8 +52,11 @@ public class SampleMarkingPipeline extends OpenCvPipeline {
     public static final double fx = 463.94,fy = 462.24;
     public static final double camX = 0,camY = 0;
 
-    int CAMERA_HEIGHT = 480;
-    int CAMERA_WIDTH = 640;
+//    int CAMERA_HEIGHT = 480;
+//    int CAMERA_WIDTH = 640;
+
+    int CAMERA_HEIGHT = 960;
+    int CAMERA_WIDTH = 1280;
 
     public enum MaskColor {
         YELLOW,
@@ -88,6 +90,9 @@ public class SampleMarkingPipeline extends OpenCvPipeline {
     List<MatOfPoint> blueContours;
 
     Mat redMask;
+    Mat Mask = new Mat();
+    Mat hsvFrame = new Mat();
+
 
     public SampleMarkingPipeline(){
         cameraMatrix.put(0, 0,
@@ -116,9 +121,9 @@ public class SampleMarkingPipeline extends OpenCvPipeline {
 //        YellowSampleList.clear();
 //        BlueSampleList.clear();
 
-        redMask = preprocessFrame(input, lowRed, highRed);
-//        Mat yellowMask = preprocessFrame(input, lowYellow, highYellow);
-//        Mat blueMask = preprocessFrame(input, lowBlue, highBlue);
+        redMask = preprocessFrame(input, ColorConst.lowRed, ColorConst.highRed);
+//        Mat yellowMask = preprocessFrame(input, ColorConst.lowYellow, ColorConst.highYellow);
+//        Mat blueMask = preprocessFrame(input, ColorConst.lowBlue, ColorConst.highBlue);
 
         // Find contours of the detected regions
         redContours = findContours(redMask);
@@ -161,10 +166,8 @@ public class SampleMarkingPipeline extends OpenCvPipeline {
     }
 
     private Mat preprocessFrame(Mat frame, Scalar low, Scalar high) {
-        Mat hsvFrame = new Mat();
         Imgproc.cvtColor(frame, hsvFrame, Imgproc.COLOR_BGR2HSV);
 
-        Mat Mask = new Mat();
         Core.inRange(hsvFrame, low, high, Mask);
 
         Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(5, 5));
