@@ -72,6 +72,6 @@ public class GripperOrientPipeline0_90 extends OpenCvPipeline {
         return largestContour;
     }
     public GripperAngle getAngle(MatOfPoint2f contour){
-
+        return GripperAngle.ANGLE_0;
     }
 }
