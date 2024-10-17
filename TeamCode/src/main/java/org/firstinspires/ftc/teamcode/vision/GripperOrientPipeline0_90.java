@@ -5,6 +5,7 @@ import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Point;
+import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
@@ -17,7 +18,7 @@ public class GripperOrientPipeline0_90 extends OpenCvPipeline {
 
     Mat Mask = new Mat();
     List<MatOfPoint> contours = new ArrayList<>();
-    MatOfPoint2f l_contourf = new MatOfPoint2f();
+//    MatOfPoint2f l_contourf = new MatOfPoint2f();
     Mat hsvFrame = new Mat();
     MatOfPoint l_contour = new MatOfPoint();
     Mat ColorMask = new Mat();
@@ -26,7 +27,7 @@ public class GripperOrientPipeline0_90 extends OpenCvPipeline {
         ANGLE_0,
         ANGLE_90
     }
-    GripperAngle angle = GripperAngle.ANGLE_0;
+    public GripperAngle angle = GripperAngle.ANGLE_0;
 
     @Override
     public Mat processFrame(Mat input) {
@@ -34,7 +35,8 @@ public class GripperOrientPipeline0_90 extends OpenCvPipeline {
         contours = findContours(ColorMask);
         Imgproc.drawContours(input,contours,-1,new Scalar(0,0,0),3);
         l_contour = findLargestContour(contours);
-        l_contourf = new MatOfPoint2f(l_contour.toArray());
+        gripper_orient(l_contour);
+//        l_contourf = new MatOfPoint2f(l_contour.toArray());
 //        String text = String.format("%.2f",get_orientation(l_contourf));
 //        Imgproc.putText(input,text, new Point(10, 30), Imgproc.FONT_HERSHEY_COMPLEX, 1, new Scalar(0, 255, 0), 1);
         return input;
@@ -71,7 +73,13 @@ public class GripperOrientPipeline0_90 extends OpenCvPipeline {
         }
         return largestContour;
     }
-    public GripperAngle getAngle(MatOfPoint2f contour){
-        return GripperAngle.ANGLE_0;
+    private void gripper_orient(MatOfPoint contour){
+        try{
+            Rect x = Imgproc.boundingRect(contour);
+            angle = x.width>x.height? GripperAngle.ANGLE_90:GripperAngle.ANGLE_0;
+        }
+        catch (Exception e){
+            angle = GripperAngle.ANGLE_0;
+        }
     }
 }
