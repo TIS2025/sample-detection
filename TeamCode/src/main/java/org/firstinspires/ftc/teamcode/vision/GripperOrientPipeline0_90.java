@@ -80,6 +80,7 @@ public class GripperOrientPipeline0_90 extends OpenCvPipeline {
         }
         catch (Exception e){
             angle = GripperAngle.ANGLE_0;
+
         }
     }
 }
