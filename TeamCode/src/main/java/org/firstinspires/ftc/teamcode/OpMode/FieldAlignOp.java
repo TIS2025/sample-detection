@@ -8,6 +8,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.teamcode.Globals.VisionConst;
+import org.firstinspires.ftc.teamcode.MecanumDrive;
 import org.firstinspires.ftc.teamcode.vision.FieldAlignPipeline;
 import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvCameraFactory;
@@ -17,9 +18,9 @@ import org.openftc.easyopencv.OpenCvCameraRotation;
 @Config
 public class FieldAlignOp extends LinearOpMode {
 
-    public static double X = 0;
-    public static double Y = 0;
-    public static double heading = 0;
+    public static double X = VisionConst.startPose.position.x;
+    public static double Y = VisionConst.startPose.position.y;
+    public static double heading = 90;
 
     FieldAlignPipeline pipeline = new FieldAlignPipeline();
     public int CAMERA_HEIGHT = 720;
@@ -28,21 +29,23 @@ public class FieldAlignOp extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
 
+        MecanumDrive drive = new MecanumDrive(hardwareMap,VisionConst.startPose);
         initCamera();
 
         waitForStart();
         while (opModeIsActive()){
-            pipeline.updatePose(VisionConst.CAMERA_X,VisionConst.CAMERA_Y,VisionConst.CAMERA_Z,VisionConst.CAMERA_YAW,VisionConst.CAMERA_PITCH,VisionConst.CAMERA_ROLL);
+
+            drive.updatePoseEstimate();
+            double x = drive.pose.position.x;
+            double y = drive.pose.position.y;
+            double heading = Math.toDegrees(drive.pose.heading.toDouble());
+            pipeline.updatePose(x,y,heading);
             telemetry.addData("X",pipeline.X);
             telemetry.addData("Y",pipeline.Y);
-            telemetry.addData("Z",pipeline.Z);
-            telemetry.addData("Pitch",pipeline.pitch);
-            telemetry.addData("Yaw",pipeline.yaw);
-            telemetry.addData("Roll",pipeline.roll);
-            telemetry.addData("top_left",pipeline.tl);
-            telemetry.addData("top_right",pipeline.tr);
-            telemetry.addData("bottom_left",pipeline.bl);
-            telemetry.addData("bottom_right",pipeline.br);
+            telemetry.addData("heading",pipeline.yaw);
+            telemetry.addData("bot x", x);
+            telemetry.addData("bot y", y);
+            telemetry.addData("bot heading (deg)", heading);
             telemetry.update();
         }
     }
@@ -55,7 +58,7 @@ public class FieldAlignOp extends LinearOpMode {
                 hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
         controlHubCam.setPipeline(pipeline);
         controlHubCam.openCameraDevice();
-        controlHubCam.startStreaming(CAMERA_WIDTH, CAMERA_HEIGHT, OpenCvCameraRotation.UPRIGHT);
+        controlHubCam.startStreaming(CAMERA_WIDTH, CAMERA_HEIGHT, OpenCvCameraRotation.UPSIDE_DOWN);
         FtcDashboard dashboard = FtcDashboard.getInstance();
         telemetry = new MultipleTelemetry(telemetry, dashboard.getTelemetry());
         FtcDashboard.getInstance().startCameraStream(controlHubCam, 60);

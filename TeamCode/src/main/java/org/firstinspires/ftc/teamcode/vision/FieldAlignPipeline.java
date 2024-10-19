@@ -16,10 +16,10 @@ public class FieldAlignPipeline extends OpenCvPipeline {
 
     public double X;
     public double Y;
-    public double Z;
-    public double pitch;
-    public double yaw;
-    public double roll;
+    public double Z = VisionConst.CAMERA_Z_OFFSET;
+    public double pitch = VisionConst.CAMERA_PITCH;
+    public double yaw = VisionConst.startPose.heading.real;
+    public double roll = VisionConst.CAMERA_ROLL;
 
     public Point tl;
     public Point tr;
@@ -146,13 +146,12 @@ public class FieldAlignPipeline extends OpenCvPipeline {
         return t;
     }
 
-    public void updatePose(double x, double y, double z, double yaw, double pitch, double roll) {
-        X = x;
-        Y = y;
-        Z = z;
-        this.yaw = yaw;
-        this.roll = roll;
-        this.pitch = pitch;
+    public void updatePose(double x, double y, double heading) {
+        double cos = Math.cos(Math.toRadians(heading));
+        double sin = Math.sin(Math.toRadians(heading));
+        X = -x - VisionConst.CAMERA_X_OFFSET*cos + VisionConst.CAMERA_Y_OFFSET*sin;
+        Y = y + VisionConst.CAMERA_X_OFFSET*sin + VisionConst.CAMERA_Y_OFFSET*cos;
+        yaw = -heading+90;
     }
 }
 //
