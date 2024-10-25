@@ -17,12 +17,13 @@ import org.opencv.core.RotatedRect;
 import org.openftc.easyopencv.OpenCvCamera;
 import org.openftc.easyopencv.OpenCvCameraFactory;
 import org.openftc.easyopencv.OpenCvCameraRotation;
+import org.openftc.easyopencv.OpenCvWebcam;
 
 @TeleOp(name = "Pipeline Tester")
 public class PipelineTestOp extends LinearOpMode {
 
     private final FtcDashboard dash = FtcDashboard.getInstance();
-    GripperRotationPipeline pipeline = new GripperRotationPipeline();
+    GripperRotationPipeline0_45_90_135 pipeline = new GripperRotationPipeline0_45_90_135();
     public static int CAMERA_WIDTH = 1280;
     public static int CAMERA_HEIGHT = 960;
     double servo0 = 0.305;
@@ -47,15 +48,15 @@ public class PipelineTestOp extends LinearOpMode {
             P1.copy(C1);
             C1.copy(gamepad1);
 
-            if(C1.dpad_up && !P1.dpad_up) gripper.setPosition(gripper.getPosition()+0.005);
-            if(C1.dpad_down && !P1.dpad_down) gripper.setPosition(gripper.getPosition()-0.005);
-            if(C1.a && !P1.a) gripper.setPosition(gripper.getPosition()+0.1);
-            if(C1.b && !P1.b) gripper.setPosition(gripper.getPosition()-0.1);
+//            if(C1.dpad_up && !P1.dpad_up) gripper.setPosition(gripper.getPosition()+0.005);
+//            if(C1.dpad_down && !P1.dpad_down) gripper.setPosition(gripper.getPosition()-0.005);
+//            if(C1.a && !P1.a) gripper.setPosition(gripper.getPosition()+0.1);
+//            if(C1.b && !P1.b) gripper.setPosition(gripper.getPosition()-0.1);
 
             telemetry.addData("Angle",pipeline.getAngle());
 
-            gripper.setPosition(get_servo_pos(pipeline.getAngle()));
-            telemetry.addData("Gripper or",gripper.getPosition());
+//            gripper.setPosition(get_servo_pos(pipeline.getAngle()));
+//            telemetry.addData("Gripper or",gripper.getPosition());
             telemetry.update();
 //            drive.setDrivePowers(driveCommand(C1));
         }
@@ -65,11 +66,11 @@ public class PipelineTestOp extends LinearOpMode {
 
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier(
                 "cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
-        OpenCvCamera controlHubCam = OpenCvCameraFactory.getInstance().createWebcam(
+        OpenCvWebcam controlHubCam = OpenCvCameraFactory.getInstance().createWebcam(
                 hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
         controlHubCam.setPipeline(pipeline);
         controlHubCam.openCameraDevice();
-        controlHubCam.startStreaming(CAMERA_WIDTH, CAMERA_HEIGHT, OpenCvCameraRotation.UPSIDE_DOWN);
+        controlHubCam.startStreaming(640,480 , OpenCvCameraRotation.UPRIGHT, OpenCvWebcam.StreamFormat.MJPEG);
         FtcDashboard dashboard = FtcDashboard.getInstance();
         telemetry = new MultipleTelemetry(telemetry, dashboard.getTelemetry());
         FtcDashboard.getInstance().startCameraStream(controlHubCam, 30);
