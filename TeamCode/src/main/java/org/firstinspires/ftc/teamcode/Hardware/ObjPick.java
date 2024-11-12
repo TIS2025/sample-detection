@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.Hardware;
 
 import com.acmerobotics.dashboard.config.Config;
 import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -11,6 +12,8 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.Servo;
 
+import org.firstinspires.ftc.robotcore.internal.opengl.models.SavedMeshObject;
+import org.firstinspires.ftc.teamcode.LL.Sample;
 import org.firstinspires.ftc.teamcode.VisionUtils.CameraOrientation;
 import org.firstinspires.ftc.teamcode.VisionUtils.KinematicSolver;
 import org.firstinspires.ftc.teamcode.VisionUtils.PerspectiveSolver;
@@ -48,10 +51,13 @@ public class ObjPick extends LinearOpMode {
     double w1 = 7.3;
     double w2 = 16.5;
     double cx1 = CAMERA_HEIGHT - 480;
-    double cx2 = CAMERA_HEIGHT - 180;
-    double cx3 = CAMERA_HEIGHT - 95;
+    double cx2 = CAMERA_HEIGHT - 164;
+    double cx3 = CAMERA_HEIGHT - 73;
 
-
+    public List<Sample> redSamples = new ArrayList<>();
+    public List<Sample> blueSamples = new ArrayList<>();
+    public List<Sample> yellowSamples = new ArrayList<>();
+//    Sample x = new Sample();
 
     public static double angle = 28.5;
     double cam_offset = 7;
@@ -64,7 +70,7 @@ public class ObjPick extends LinearOpMode {
     PerspectiveSolver Psolver = new PerspectiveSolver(angle,x_offset,y_offset,cx1,cx2,cx3,0,10,20,
             0,0,0,0,0,0,w1,w2, CameraOrientation.UPRIGHT,CAMERA_HEIGHT,CAMERA_WIDTH);
 
-    KinematicSolver solver = new KinematicSolver(1.5,5.2,1.5,0);
+    KinematicSolver solver = new KinematicSolver(1.5,5.2,0.5,0);
 
 
     Servo shoulder;
@@ -74,7 +80,7 @@ public class ObjPick extends LinearOpMode {
 
     Servo s1,s2,s3,s4,s5,s6;
 
-
+    double[] pickup_pos = new double[0];
     public static double tx = 10,ty=5;
 
     //TODO SERVO VAR
@@ -201,12 +207,12 @@ public class ObjPick extends LinearOpMode {
             telemetry.addData("TURRET R",liftChanger.getCurrentPosition());
             telemetry.addData("LOW HANG",lowHang.getCurrentPosition());
 
-            if(!limelight.isConnected()){
-//                limelight.setPollRateHz(100);
-                limelight.stop();
-                sleep(1000);
-                limelight.start();
-            }
+//            if(!limelight.isConnected()){
+////                limelight.setPollRateHz(100);
+//                limelight.stop();
+//                sleep(1000);
+//                limelight.start();
+//            }
 
 
             telemetry.addData("Connected",limelight.isConnected());
@@ -217,49 +223,102 @@ public class ObjPick extends LinearOpMode {
 
         reset();
         waitForStart();
+        limelight.start();
         while (opModeIsActive()) {
             P.copy(C);
             C.copy(gamepad1);
+            redSamples.clear();
+            blueSamples.clear();
+            yellowSamples.clear();
 
             LLResult result = limelight.getLatestResult();
-
-
-
-            if(C.a && !P.a) track_flag = !track_flag;
-            if(C.x && !P.x) update_reading = !update_reading;
-
-            if(update_reading){
-                interpret_limelight(result);
-                pos = solver.getExtYaw(obj_pos);
+            sample_filter(result);
+            if(!redSamples.isEmpty()) {
+                telemetry.addData("Red Samples",redSamples.size());
+                telemetry.addData("Sample",redSamples.get(0).field_pos);
             }
+            else telemetry.addData("Red Samples",0);
+            if(!blueSamples.isEmpty())  {
+                telemetry.addData("Blue Samples",blueSamples.size());
+                telemetry.addData("Sample",blueSamples.get(0).field_pos);
+            }
+            else telemetry.addData("Blue Samples",0);
+            if(!yellowSamples.isEmpty())  {
+                telemetry.addData("Yellow Samples",yellowSamples.size());
+                telemetry.addData("Sample",yellowSamples.get(0).field_pos);
+            }
+            else telemetry.addData("Yellow Samples",0);
 
-            if(C.y){
-                double[] pickup_pos = solver.getExtYaw(average_reading());
-                if(average_reading().x>=3 && Math.abs(average_reading().y)<6)
+
+//            if(C.a && !P.a) track_flag = !track_flag;
+//            if(C.x && !P.x) update_reading = !update_reading;
+
+//            if(update_reading){
+////                interpret_limelight(result);
+//
+//                sample_filter(result);
+//
+////                telemetry.addData("Blue Samples",blueSamples.size());
+////                telemetry.addData("Yellow Samples",yellowSamples.size());
+////                pos = solver.getExtYaw(obj_pos);
+//            }
+
+            if(C.y && !P.y && !redSamples.isEmpty()){
+                pickup_pos = solver.getExtYaw(redSamples.get(0).field_pos);
+                obj_orient = redSamples.get(0).orientation;
                 {
                     extendToInchInput(pickup_pos[0],0.9);
                     viperYawDegrees(pickup_pos[1]);
                     wristRotateOrientation(pickup_pos[1],obj_orient);
                     sleep(500);
-                    shoulder.setPosition(0.6);
+                    shoulder.setPosition(0.65);
                     sleep(500);
                     grip.setPosition(0.938);
                     sleep(500);
                     shoulder.setPosition(0.8);
-
                 }
             }
-
-            if (track_flag){
-                update_reading = false;
-                interpret_limelight(result);
-                pos = solver.getExtYaw(obj_pos);
-                if(obj_pos.x>=3 && Math.abs(obj_pos.y)<6)
+            if(C.x && !P.x && !yellowSamples.isEmpty()){
+                pickup_pos = solver.getExtYaw(yellowSamples.get(0).field_pos);
+                obj_orient = yellowSamples.get(0).orientation;
                 {
-                    extendToInchInput(pos[0],pow);
-                    viperYawDegrees(pos[1]);
+                    extendToInchInput(pickup_pos[0],0.9);
+                    viperYawDegrees(pickup_pos[1]);
+                    wristRotateOrientation(pickup_pos[1],obj_orient);
+                    sleep(500);
+                    shoulder.setPosition(0.65);
+                    sleep(500);
+                    grip.setPosition(0.938);
+                    sleep(500);
+                    shoulder.setPosition(0.8);
                 }
             }
+            if(C.a && !P.a && !blueSamples.isEmpty()){
+                pickup_pos = solver.getExtYaw(blueSamples.get(0).field_pos);
+                obj_orient = blueSamples.get(0).orientation;
+                {
+                    extendToInchInput(pickup_pos[0],0.9);
+                    viperYawDegrees(pickup_pos[1]);
+                    wristRotateOrientation(pickup_pos[1],obj_orient);
+                    sleep(500);
+                    shoulder.setPosition(0.65);
+                    sleep(500);
+                    grip.setPosition(0.938);
+                    sleep(500);
+                    shoulder.setPosition(0.8);
+                }
+            }
+
+//            if (track_flag){
+//                update_reading = false;
+//                interpret_limelight(result);
+//                pos = solver.getExtYaw(obj_pos);
+//                if(obj_pos.x>=3 && Math.abs(obj_pos.y)<6)
+//                {
+//                    extendToInchInput(pos[0],pow);
+//                    viperYawDegrees(pos[1]);
+//                }
+//            }
 
             //TODO SHOULDER-POS
 //            if(C.dpad_up && !P.dpad_up){
@@ -322,7 +381,7 @@ public class ObjPick extends LinearOpMode {
 //                sleep(500);
                 extendTo(5,pow);
                 wrist.setPosition(0.85);
-                grip.setPosition(0.7);
+                grip.setPosition(0.75);
                 track_flag=false;
             }
 
@@ -379,29 +438,30 @@ public class ObjPick extends LinearOpMode {
             String field_pos_1 = "{" + String.format("%.2f",prev_pos[1].x) + "," + String.format("%.2f",prev_pos[1].y) + "}";
             String field_pos_2 = "{" + String.format("%.2f",prev_pos[0].x) + "," + String.format("%.2f",prev_pos[0].y) + "}";
 
-            telemetry.addData("field_pos cur",field_pos0);
-            telemetry.addData("field_pos prev",field_pos_1);
-            telemetry.addData("field_pos prev prev",field_pos_2);
-            telemetry.addData("track",track_flag);
-            telemetry.addData("wrist_rotate",obj_orient);
-            telemetry.addData("LIFTER L",lifterL.getCurrentPosition());
-            telemetry.addData("LIFTER R",lifterR.getCurrentPosition());
-            telemetry.addData("Inch ext",inchExt);
-            telemetry.addData("TURRET R",liftChanger.getCurrentPosition());
-            telemetry.addData("LOW HANG",lowHang.getCurrentPosition());
-
-
-            //TODO TELEMETRY
-            telemetry.addData("Shoulder L", shoulderL);
-            telemetry.addData("Shoulder LEFT", shoulder.getPosition());
-            telemetry.addData("Wrist", wristPos);
-            telemetry.addData("Wrist SERVO", wrist.getPosition());
-            telemetry.addData("Gripper", gripPos);
-            telemetry.addData("Viper SERVO",viper.getPosition());
-            telemetry.addData("Viper",viperPos);
-
-            telemetry.addData("Kin ext","%.2f",pos[0]);
-            telemetry.addData("Kin yaw","%.2f",pos[1]);
+//            telemetry.addData("field_pos cur",field_pos0);
+//            telemetry.addData("field_pos prev",field_pos_1);
+//            telemetry.addData("field_pos prev prev",field_pos_2);
+            telemetry.addData("Update",update_reading);
+//            telemetry.addData("track",track_flag);
+//            telemetry.addData("wrist_rotate",obj_orient);
+//            telemetry.addData("LIFTER L",lifterL.getCurrentPosition());
+//            telemetry.addData("LIFTER R",lifterR.getCurrentPosition());
+//            telemetry.addData("Inch ext",inchExt);
+//            telemetry.addData("TURRET R",liftChanger.getCurrentPosition());
+//            telemetry.addData("LOW HANG",lowHang.getCurrentPosition());
+//
+//
+//            //TODO TELEMETRY
+//            telemetry.addData("Shoulder L", shoulderL);
+//            telemetry.addData("Shoulder LEFT", shoulder.getPosition());
+//            telemetry.addData("Wrist", wristPos);
+//            telemetry.addData("Wrist SERVO", wrist.getPosition());
+//            telemetry.addData("Gripper", gripPos);
+//            telemetry.addData("Viper SERVO",viper.getPosition());
+//            telemetry.addData("Viper",viperPos);
+//
+//            telemetry.addData("Kin ext","%.2f",pos[0]);
+//            telemetry.addData("Kin yaw","%.2f",pos[1]);
             telemetry.update();
         }
 
@@ -516,6 +576,50 @@ public class ObjPick extends LinearOpMode {
         }
         catch (Exception e){
             obj_pos = new Point(0,0);
+        }
+    }
+
+    public void sample_filter(LLResult result){
+        try{
+            for (LLResultTypes.DetectorResult detector : result.getDetectorResults()) {
+                List<Double> pt1 = detector.getTargetCorners().get(0);
+                List<Double> pt2 = detector.getTargetCorners().get(1);
+                List<Double> pt3 = detector.getTargetCorners().get(2);
+                List<Double> pt4 = detector.getTargetCorners().get(3);
+
+                double max_y = Math.max(pt1.get(1), Math.max(pt2.get(1), Math.max(pt3.get(1), pt4.get(1))));
+                double min_y = Math.min(pt1.get(1), Math.min(pt2.get(1), Math.min(pt3.get(1), pt4.get(1))));
+                double max_x = Math.max(pt1.get(0), Math.max(pt2.get(0), Math.max(pt3.get(0), pt4.get(0))));
+                double min_x = Math.min(pt1.get(0), Math.min(pt2.get(0), Math.min(pt3.get(0), pt4.get(0))));
+
+                double width = max_x - min_x;
+                double height = max_y - min_y;
+
+                double cx = (pt1.get(0) + pt2.get(0) + pt3.get(0) + pt4.get(0)) / 4;
+                double cy = Math.max(pt1.get(1), Math.max(pt2.get(1), Math.max(pt3.get(1), pt4.get(1))));
+
+                Point field_pos = Psolver.getX2Y2(new Point(cx, cy));
+                boolean orientation = width/height>1.2;
+                int class_id = detector.getClassId();
+                double confidence = detector.getConfidence();
+                double offset = orientation?0.5:1.5;
+
+                if (Math.abs(field_pos.y+1.5) < 1.5 && field_pos.x < 15 && class_id == 0) {
+                    field_pos.x+=offset;
+                    blueSamples.add(new Sample(field_pos,class_id,confidence,orientation));
+                }
+                if (Math.abs(field_pos.y+1.5) < 1.5 && field_pos.x < 15 && class_id == 1) {
+                    field_pos.x+=offset;
+                    redSamples.add(new Sample(field_pos,class_id,confidence,orientation));
+                }
+                if (Math.abs(field_pos.y+1.5) < 1.5 && field_pos.x < 15 && class_id == 2) {
+                    field_pos.x+=offset;
+                    yellowSamples.add(new Sample(field_pos,class_id,confidence,orientation));
+                }
+            }
+        }
+        catch (Exception e){
+            telemetry.addLine("Failed to input samples");
         }
     }
 

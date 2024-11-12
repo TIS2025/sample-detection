@@ -13,59 +13,55 @@ import java.util.List;
 @TeleOp(name = "Limelight")
 public class Limelight_test extends LinearOpMode {
     public static Limelight3A limelight;
-    public double[] pythonOutputs = null;
     @Override
     public void runOpMode() throws InterruptedException {
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
         telemetry.setMsTransmissionInterval(100);
 
 //        limelight.reloadPipeline();
-        limelight.pipelineSwitch(1);
+        limelight.pipelineSwitch(2);
 
-//        limelight.stop();
-        while(opModeInInit()){
-            if(!limelight.isConnected()){
-//                limelight.setPollRateHz(100);
-                limelight.stop();
-                sleep(1000);
-                limelight.start();
-            }
+////        limelight.stop();
+//        while(opModeInInit()){
+//            if(!limelight.isConnected()){
+////                limelight.setPollRateHz(100);
+//                limelight.stop();
+//                sleep(1000);
+//                limelight.start();
+//            }
 
-
-            telemetry.addData("Connected",limelight.isConnected());
-            telemetry.addData("Connected",limelight.isRunning());
-            telemetry.update();
-        }
+//
+//            telemetry.addData("Connected",limelight.isConnected());
+//            telemetry.addData("Connected",limelight.isRunning());
+//            telemetry.update();
+//        }
 //        limelight.start();
 //        Thread.sleep(100);
         waitForStart();
-
+        limelight.start();
         while (opModeIsActive()) {
 
 //            sleep(20);
 //            LLResult result = limelight.getLatestResult();
             LLResult result = limelight.getLatestResult();
 
-//            telemetry.addData("Valid: ", result.isValid());
-
-
             try{
-                telemetry.addData("result", result.getDetectorResults().get(0).getTargetCorners());
+//                telemetry.addData("result", result.getDetectorResults().get(0).getTargetCorners());
 
 
-                List<Double> pt1 = result.getDetectorResults().get(0).getTargetCorners().get(0);
-                List<Double> pt2 = result.getDetectorResults().get(0).getTargetCorners().get(1);
-                List<Double> pt3 = result.getDetectorResults().get(0).getTargetCorners().get(2);
-                List<Double> pt4 = result.getDetectorResults().get(0).getTargetCorners().get(3);
+//                List<Double> pt1 = result.getDetectorResults().get(0).getTargetCorners().get(0);
+//                List<Double> pt2 = result.getDetectorResults().get(0).getTargetCorners().get(1);
+//                List<Double> pt3 = result.getDetectorResults().get(0).getTargetCorners().get(2);
+//                List<Double> pt4 = result.getDetectorResults().get(0).getTargetCorners().get(3);
+//
+//                double cx = (pt1.get(0) + pt2.get(0) + pt3.get(0) + pt4.get(0)) / 4;
+//                double cy = (pt1.get(1) + pt2.get(1) + pt3.get(1) + pt4.get(1)) / 4;
+//
+//                Point centroid = new Point(cx, cy);
 
-                double cx = (pt1.get(0) + pt2.get(0) + pt3.get(0) + pt4.get(0)) / 4;
-                double cy = (pt1.get(1) + pt2.get(1) + pt3.get(1) + pt4.get(1)) / 4;
-
-                Point centroid = new Point(cx, cy);
-
-                telemetry.addData("centroid", new Point(cx, cy));
-
-                telemetry.addData("Field_Pos", get_field_pos(centroid));
+//                telemetry.addData("centroid", new Point(cx, cy));
+                telemetry.addData("Result",result);
+//                telemetry.addData("Field_Pos", get_field_pos(centroid));
             }
             catch (Exception e){
                 telemetry.addLine("No point");

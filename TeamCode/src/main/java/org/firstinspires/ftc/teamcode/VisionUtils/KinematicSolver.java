@@ -27,10 +27,12 @@ public class KinematicSolver {
 
         if(Math.abs(target.y+y_offset)<=arm_l) {
             theta = Math.toDegrees(Math.asin((target.y + y_offset) / arm_l) + theta_offset);
-            ext = target.x + x_offset - arm_l * Math.cos(Math.toRadians(theta - theta_offset));
+            ext = target.x + x_offset - arm_l;
+//            ext = target.x + x_offset - arm_l * Math.cos(Math.toRadians(theta - theta_offset));
         }
         ext = Math.max(0,Math.min(11,ext));
         theta = Math.max(-45,Math.min(45,theta));
-        return new double[]{ext,theta};
+//        return new double[]{ext,theta};
+        return new double[]{ext,0};
     }
 }
