@@ -58,7 +58,7 @@ public class PerspectiveSolver {
         if (cam_x==cx2){
             field_x = fx2 + 7;
             //width is w1 at x1 and w2 at x2
-            double width = w1 + (w2-w1)/(fx3-fx1)*(fx2-fx1);
+            double width = w1 + (w2-w1)/(fx2-fx1)*(fx2-fx1);
             field_y = cam_y/CAMERA_WIDTH*width;
         }
         else{
@@ -66,13 +66,13 @@ public class PerspectiveSolver {
             double k = ((cx2-cx1)*(cx3 - cam_x))/((cx3 - cx1)*(cx2 - cam_x))*(fx3-fx1)/(fx2-fx1);
 
             //
-            field_x = (k*fx2-fx3)/(k-1) + 5;//1 inch offset from object center to the frame corner;
+            field_x = (k*fx2-fx3)/(k-1) + 7.5;//1 inch offset from object center to the frame corner;
             double width = w1 + (w2-w1)/(fx2-fx1)*(field_x-fx1);
             field_y = cam_y/CAMERA_WIDTH*width;
         }
 
         double field_x_tr = field_x*Math.cos(camera_angle) + field_y*Math.sin(camera_angle) + x_offset;
-        double field_y_tr = -field_x*Math.sin(camera_angle) + field_y*Math.cos(camera_angle) + y_offset-0.7;
+        double field_y_tr = -field_x*Math.sin(camera_angle) + field_y*Math.cos(camera_angle) + y_offset;
         return new Point(field_x_tr,field_y_tr);
 //        return new Point(field_x,field_y);
     }
