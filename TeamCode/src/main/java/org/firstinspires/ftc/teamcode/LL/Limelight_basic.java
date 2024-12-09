@@ -10,8 +10,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import java.util.List;
 
-@TeleOp(name = "Limelight Test")
-@Disabled
+@TeleOp(name = "Limelight Basic Test")
 public class Limelight_basic extends LinearOpMode {
 
     Limelight3A limelight;
@@ -22,33 +21,13 @@ public class Limelight_basic extends LinearOpMode {
         limelight = hardwareMap.get(Limelight3A.class,"limelight");
 
         telemetry.setMsTransmissionInterval(100);
-        limelight.pipelineSwitch(2);
+        limelight.pipelineSwitch(0);
 
         waitForStart();
         limelight.start();
         while (opModeIsActive()){
-
-
             LLResult result = limelight.getLatestResult();
-//            telemetry.addData("Result null",result==null);
-//            if (result != null) {
-//                telemetry.addData("Validity",result.isValid());
-//                if (result.isValid()) {
-//                    double[] pythonOutputs = result.getPythonOutput();
-//                    telemetry.addData("Validity", result.isValid());
-//                    telemetry.addLine();
-//                    telemetry.addLine();
                     telemetry.addData("Result", result);
-//                }
-//            }
-
-
-//            List<LLResultTypes.FiducialResult> fiducialResults = result.getFiducialResults();
-//            telemetry.addData("Fiducial", "ID: %d, Family: %s, X: %.2f, Y: %.2f", fr.getFiducialId(), fr.getFamily(),fr.getTargetXDegrees(), fr.getTargetYDegrees());
-//            if(result.isValid()){
-//            telemetry.addData("PythonOutput", java.util.Arrays.toString(result.getPythonOutput()));
-//                telemetry.addData("Out", )
-//            }
             telemetry.update();
         }
 

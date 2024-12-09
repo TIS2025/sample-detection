@@ -67,7 +67,7 @@ public class ObjPick extends LinearOpMode {
     Point[] prev_pos = {new Point(0,0),new Point(0,0),new Point(0,0)};
     boolean obj_orient = false;
 
-    PerspectiveSolver Psolver = new PerspectiveSolver(angle,x_offset,y_offset,cx1,cx2,cx3,0,10,20,
+    PerspectiveSolver Psolver = new PerspectiveSolver(angle,x_offset,y_offset,cam_offset,cx1,cx2,cx3,0,10,20,
             0,0,0,0,0,0,w1,w2, CameraOrientation.UPRIGHT,CAMERA_HEIGHT,CAMERA_WIDTH);
 
     KinematicSolver solver = new KinematicSolver(1.5,5.2,0.5,0);

@@ -15,13 +15,13 @@ public class PerspectiveSolver {
     double camera_angle;
     int CAMERA_HEIGHT;
     int CAMERA_WIDTH;
-    double x_offset,y_offset;
+    double x_offset,y_offset,camera_offset;
     double cx1,cx2,cx3,fx1,fx2,fx3,w1,w2;
     double cy1,cy2,cy3,fy1,fy2,fy3;
     CameraOrientation orientation;
 
 
-    public PerspectiveSolver(double camera_angle, double x_offset, double y_offset,
+    public PerspectiveSolver(double camera_angle, double x_offset, double y_offset, double camera_offset,
                              double cx1, double cx2, double cx3, double fx1, double fx2, double fx3,
                              double cy1, double cy2, double cy3, double fy1, double fy2, double fy3,
                              double w1, double w2, CameraOrientation orientation,
@@ -29,6 +29,7 @@ public class PerspectiveSolver {
         this.camera_angle = Math.toRadians(camera_angle);
         this.x_offset = x_offset;
         this.y_offset = y_offset;
+        this.camera_offset = camera_offset;
         this.cx1 = cx1;
         this.cx2 = cx2;
         this.cx3 = cx3;
@@ -56,7 +57,7 @@ public class PerspectiveSolver {
         double field_x,field_y;
 
         if (cam_x==cx2){
-            field_x = fx2 + 7;
+            field_x = fx2 + camera_offset;
             //width is w1 at x1 and w2 at x2
             double width = w1 + (w2-w1)/(fx2-fx1)*(fx2-fx1);
             field_y = cam_y/CAMERA_WIDTH*width;
@@ -66,7 +67,7 @@ public class PerspectiveSolver {
             double k = ((cx2-cx1)*(cx3 - cam_x))/((cx3 - cx1)*(cx2 - cam_x))*(fx3-fx1)/(fx2-fx1);
 
             //
-            field_x = (k*fx2-fx3)/(k-1) + 7.5;//1 inch offset from object center to the frame corner;
+            field_x = (k*fx2-fx3)/(k-1) + camera_offset;//1 inch offset from object center to the frame corner;
             double width = w1 + (w2-w1)/(fx2-fx1)*(field_x-fx1);
             field_y = cam_y/CAMERA_WIDTH*width;
         }
