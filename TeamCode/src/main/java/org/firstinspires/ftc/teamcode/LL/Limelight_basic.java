@@ -1,7 +1,5 @@
 package org.firstinspires.ftc.teamcode.LL;
 
-import android.graphics.Point;
-
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.LLStatus;
@@ -10,6 +8,13 @@ import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
+import org.opencv.core.MatOfPoint2f;
+import org.opencv.core.Point;
+import org.opencv.imgproc.Imgproc;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 
 @TeleOp(name = "Limelight Basic Test")
@@ -62,5 +67,35 @@ public class Limelight_basic extends LinearOpMode {
         else new_rot = Math.toDegrees(Math.atan2(dx, dy));
         currentRotation = new_rot;
         return currentRotation;
+    }
+
+    public double get_orientation(LLResult result){
+        List<List<Double>> res = result.getColorResults().get(0).getTargetCorners();
+        double angle = 0;
+
+        Point[] points = new Point[]{new Point(res.get(0).get(0), res.get(0).get(1)),
+                new Point(res.get(1).get(0), res.get(1).get(1)),
+                new Point(res.get(2).get(0), res.get(2).get(1)),
+                new Point(res.get(3).get(0), res.get(3).get(1))
+        };
+
+            Arrays.sort(points, Comparator.comparingDouble(point -> point.y));
+            Point tL = points[0];
+            Point bR = points[3];
+
+            Arrays.sort(points, Comparator.comparingDouble(point -> point.x));
+            Point bL = points[0];
+            Point tR = points[3];
+
+            double w = calculateDistance(tL, tR);
+            double h = calculateDistance(tL, bL);
+
+            if (tL.y == tR.y) return 0;
+            if (tL.y == bL.y) return 90;
+
+            if (w >= h) angle = 90 - Math.toDegrees(Math.atan((tL.y - bL.y) / (tL.x - bL.x)));
+            else angle = 90 - Math.toDegrees(Math.atan((tR.y - tL.y) / (tR.x - tL.x)));
+
+        return angle;
     }
 }
