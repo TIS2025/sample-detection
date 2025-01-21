@@ -52,7 +52,6 @@ public class Object_Pickup extends LinearOpMode {
     double cx3 = CAMERA_HEIGHT - 73;
 
 
-
     public static double angle = 28.5;
     double cam_offset = 7;
     double x_offset = 0;
@@ -65,8 +64,7 @@ public class Object_Pickup extends LinearOpMode {
             0,0,0,0,0,0,w1,w2, CameraOrientation.UPRIGHT,CAMERA_HEIGHT,CAMERA_WIDTH);
 
     KinematicSolver solver = new KinematicSolver(1.5,5.2,1.5,0);
-
-
+    
     Servo shoulder;
     Servo wrist;
     Servo grip;
@@ -120,6 +118,8 @@ public class Object_Pickup extends LinearOpMode {
         limelight = hardwareMap.get(Limelight3A.class,"limelight");
         telemetry.setMsTransmissionInterval(100);
         limelight.pipelineSwitch(2);
+
+        limelight.updatePythonInputs()
 
         Gamepad C = new Gamepad();
         Gamepad P = new Gamepad();

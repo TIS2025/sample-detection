@@ -7,6 +7,7 @@ import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.Servo;
 
 import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Point;
@@ -28,6 +29,9 @@ public class Limelight_basic extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
 
         limelight = hardwareMap.get(Limelight3A.class,"limelight");
+        Servo servo = hardwareMap.get(Servo.class,"wrist");
+        servo.setPosition(0.5);
+        double orientation = 0;
 
         telemetry.setMsTransmissionInterval(100);
         limelight.pipelineSwitch(4);
@@ -38,16 +42,23 @@ public class Limelight_basic extends LinearOpMode {
             LLResult result = limelight.getLatestResult();
 
             if(gamepad1.a){
+//                telemetry.addData("Result",result);
                 try {
                     telemetry.addData("Result", result.getColorResults().get(0).getTargetCorners().get(0));
                     telemetry.addData("Result", result.getColorResults().get(0).getTargetCorners().get(1));
                     telemetry.addData("Result", result.getColorResults().get(0).getTargetCorners().get(2));
                     telemetry.addData("Result", result.getColorResults().get(0).getTargetCorners().get(3));
-                    telemetry.addData("Orientation",getDirection(result));
+                    orientation = get_orientation(result);
+                    telemetry.addData("Orientation",orientation);
                 } catch (Exception e) {
                     telemetry.addLine("Failed to find samples");
                 }
             }
+
+            if(gamepad1.b){
+//                servo.setPosition(orientation/180);
+            }
+            servo.setPosition(orientation/180);
             telemetry.update();
         }
 
@@ -97,5 +108,8 @@ public class Limelight_basic extends LinearOpMode {
             else angle = 90 - Math.toDegrees(Math.atan((tR.y - tL.y) / (tR.x - tL.x)));
 
         return angle;
+    }
+    private double calculateDistance(Point p1, Point p2) {
+        return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
     }
 }
