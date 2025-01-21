@@ -45,24 +45,24 @@ public class LimeLightUtils {
                 double cx = (pt1.get(0) + pt2.get(0) + pt3.get(0) + pt4.get(0)) / 4;
                 double cy = Math.max(pt1.get(1), Math.max(pt2.get(1), Math.max(pt3.get(1), pt4.get(1))));
 
-                Point field_pos = Psolver.getX2Y2(new Point(cx, cy));
-                boolean orientation = width / height > whRatio;
-                int class_id = detector.getClassId();
-                double confidence = detector.getConfidence();
-
-//                if(field_pos.x >10 && orientation){
-//                    extension_offFalseX = field_pos.x*0.05;
+//                Point field_pos = Psolver.getX2Y2(new Point(cx, cy));
+//                boolean orientation = width / height > whRatio;
+//                int class_id = detector.getClassId();
+//                double confidence = detector.getConfidence();
+//
+////                if(field_pos.x >10 && orientation){
+////                    extension_offFalseX = field_pos.x*0.05;
+////                }
+////                else{
+////                    extension_offFalseX = 1.0;
+////                }
+//                double offset = orientation ? extension_offTrueX : extension_offFalseX;
+//                double offset_y = orientation ? extension_offTrueY : extension_offFalseY;
+//                if ((field_pos.y < Ypositive && field_pos.y > Ynegative) && (field_pos.x < Xhigh && field_pos.x > XLow) && (class_id == 0 || class_id == 2) ) {
+//                    field_pos.x += offset;
+//                    field_pos.y += offset_y;
+//                    relevantSamples.add(new Sample(field_pos, class_id, confidence, orientation, width/height));
 //                }
-//                else{
-//                    extension_offFalseX = 1.0;
-//                }
-                double offset = orientation ? extension_offTrueX : extension_offFalseX;
-                double offset_y = orientation ? extension_offTrueY : extension_offFalseY;
-                if ((field_pos.y < Ypositive && field_pos.y > Ynegative) && (field_pos.x < Xhigh && field_pos.x > XLow) && (class_id == 0 || class_id == 2) ) {
-                    field_pos.x += offset;
-                    field_pos.y += offset_y;
-                    relevantSamples.add(new Sample(field_pos, class_id, confidence, orientation, width/height));
-                }
 
 //                relevantSamples.removeIf(o -> (o.whRatio <= 1.5 && o.whRatio >= 0.95));
 //                relevantSamples.removeIf(o -> !( (o.whRatio >= 0.5 && o.whRatio <= 1.15) || (o.whRatio >= 1.2 && o.whRatio <= 1.65) ));

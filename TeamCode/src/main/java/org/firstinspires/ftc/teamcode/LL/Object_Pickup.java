@@ -119,7 +119,6 @@ public class Object_Pickup extends LinearOpMode {
         telemetry.setMsTransmissionInterval(100);
         limelight.pipelineSwitch(2);
 
-        limelight.updatePythonInputs()
 
         Gamepad C = new Gamepad();
         Gamepad P = new Gamepad();
