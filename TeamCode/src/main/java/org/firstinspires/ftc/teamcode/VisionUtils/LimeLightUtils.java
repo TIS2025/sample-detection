@@ -6,7 +6,9 @@ import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.util.Range;
 
+import org.firstinspires.ftc.teamcode.LL.Sample;
 import org.opencv.core.Point;
 
 import java.util.ArrayList;
@@ -24,9 +26,15 @@ public class LimeLightUtils {
     List<Sample> yellow_and_blue_samples = new ArrayList<>();
     List<Sample> yellow_and_red_samples = new ArrayList<>();
     PerspectiveSolver perspectiveSolver = new PerspectiveSolver();
+    KinematicSolver kinematicSolver = new KinematicSolver();
 
-    public static void filter_yellow(LLResult result){
-        try {
+    public void filter(LLResult result){
+        yellow_samples.clear();
+        red_samples.clear();
+        blue_samples.clear();
+        yellow_and_red_samples.clear();
+        yellow_and_blue_samples.clear();
+        try{
             for (LLResultTypes.DetectorResult detector : result.getDetectorResults()) {
                 List<Double> pt1 = detector.getTargetCorners().get(0);
                 List<Double> pt2 = detector.getTargetCorners().get(1);
@@ -41,72 +49,83 @@ public class LimeLightUtils {
                 double width = max_x - min_x;
                 double height = max_y - min_y;
 
-                double Area = width * height;
                 double cx = (pt1.get(0) + pt2.get(0) + pt3.get(0) + pt4.get(0)) / 4;
                 double cy = Math.max(pt1.get(1), Math.max(pt2.get(1), Math.max(pt3.get(1), pt4.get(1))));
 
-//                Point field_pos = Psolver.getX2Y2(new Point(cx, cy));
-//                boolean orientation = width / height > whRatio;
-//                int class_id = detector.getClassId();
-//                double confidence = detector.getConfidence();
-//
-////                if(field_pos.x >10 && orientation){
-////                    extension_offFalseX = field_pos.x*0.05;
-////                }
-////                else{
-////                    extension_offFalseX = 1.0;
-////                }
-//                double offset = orientation ? extension_offTrueX : extension_offFalseX;
-//                double offset_y = orientation ? extension_offTrueY : extension_offFalseY;
-//                if ((field_pos.y < Ypositive && field_pos.y > Ynegative) && (field_pos.x < Xhigh && field_pos.x > XLow) && (class_id == 0 || class_id == 2) ) {
-//                    field_pos.x += offset;
-//                    field_pos.y += offset_y;
-//                    relevantSamples.add(new Sample(field_pos, class_id, confidence, orientation, width/height));
-//                }
+                Point field_pos = perspectiveSolver.getX2Y2(new Point(cx, cy));
 
-//                relevantSamples.removeIf(o -> (o.whRatio <= 1.5 && o.whRatio >= 0.95));
-//                relevantSamples.removeIf(o -> !( (o.whRatio >= 0.5 && o.whRatio <= 1.15) || (o.whRatio >= 1.2 && o.whRatio <= 1.65) ));
+                boolean orientation = width/height>1.2;
+                int class_id = detector.getClassId();
+                double confidence = detector.getConfidence();
+                double offset = orientation?0.5:1.5;
 
-//                Comparator<Sample> comparator = Comparator.comparingDouble(o->Math.abs(o.field_pos.y));
-//                comparator = comparator.thenComparingDouble(o->Math.abs(o.field_pos.x));
-//                relevantSamples.sort(comparator);
+                if (Math.abs(field_pos.y) < 6 && field_pos.x < 15 && class_id == 0) {
+                    field_pos.x+=offset;
+                    blue_samples.add(new Sample(field_pos,class_id,confidence,orientation,width/height));
+                    yellow_and_blue_samples.add(new Sample(field_pos,class_id,confidence,orientation,width/height));
+                }
+                if (Math.abs(field_pos.y) < 6 && field_pos.x < 15 && class_id == 1) {
+                    field_pos.x+=offset;
+                    red_samples.add(new Sample(field_pos,class_id,confidence,orientation,width/height));
+                    yellow_and_red_samples.add(new Sample(field_pos,class_id,confidence,orientation,width/height));
+                }
+                if (Math.abs(field_pos.y) < 6 && field_pos.x < 15 && class_id == 2) {
+                    field_pos.x+=offset;
+                    yellow_samples.add(new Sample(field_pos,class_id,confidence,orientation,width/height));
+                    yellow_and_blue_samples.add(new Sample(field_pos,class_id,confidence,orientation,width/height));
+                    yellow_and_red_samples.add(new Sample(field_pos,class_id,confidence,orientation,width/height));
+                }
+
+                ////////Custom Filters//////////
 
             }
-        } catch (Exception e) {
-            telemetry.addLine("Failed to input samples");
+        }
+        catch (Exception e){
+            telemetry.addData("Failed to input samples:",e);
         }
     }
-    public static void filter_red(){
+    
+    public void print_samples(){
+        if(!red_samples.isEmpty()) {
+            telemetry.addData("Red Samples",red_samples.size());
+            telemetry.addData("Sample",red_samples.get(0).field_pos);
+            telemetry.addData("Orientation",red_samples.get(0).orientation);
+        }
+        else telemetry.addData("Red Samples",0);
 
+        if(!blue_samples.isEmpty())  {
+            telemetry.addData("Blue Samples",blue_samples.size());
+            telemetry.addData("Sample",blue_samples.get(0).field_pos);
+            telemetry.addData("Orientation",blue_samples.get(0).orientation);
+        }
+        else telemetry.addData("Blue Samples",0);
+
+        if(!yellow_samples.isEmpty())  {
+            telemetry.addData("Yellow Samples",yellow_samples.size());
+            telemetry.addData("Sample",yellow_samples.get(0).field_pos);
+            telemetry.addData("Orientation",yellow_samples.get(0).orientation);
+        }
+        else telemetry.addData("Yellow Samples",0);
     }
-    public static void filter_blue(){
-
-    }
-    public static void filter_yellow_red(){
-
-    }
-    public static void filter_yellow_blue(){
-
-    }
-
 
     public static class PerspectiveSolver{
 
         //Calculates coordinates with respect to bottom of camera frame using cross ratio
+
         //Input any 3 reference points in camera and their respective position in global frame
 
         /*Cross ratio = AC x BD / AD x BC, the variable input being B in this case
         We solve for field pos by equating the cross ratio as k = A'C' x B'D'/A'D' x B'C',
         where B' is the unknown.
         Final equation - k' = (AC x BD/AD x BC)*(A'D'/A'C') = (B'D'/B'C')*/
-
         double camera_angle;
         int CAMERA_HEIGHT;
         int CAMERA_WIDTH;
         double x_offset,y_offset,camera_offset;
         double cx1,cx2,cx3,fx1,fx2,fx3,w1,w2;
         double cy1,cy2,cy3,fy1,fy2,fy3;
-        org.firstinspires.ftc.teamcode.VisionUtils.CameraOrientation orientation;
+
+        CameraOrientation orientation;
 
 
         public PerspectiveSolver() {
@@ -130,8 +149,8 @@ public class LimeLightUtils {
             this.w2 = VisionConst.w2;
             this.CAMERA_HEIGHT = VisionConst.CAMERA_HEIGHT;
             this.CAMERA_WIDTH = VisionConst.CAMERA_WIDTH;
+            this.orientation = VisionConst.orientation;
         }
-
         public Point getX2Y2(Point ObjectPose){
             //Solver for 2nd point in the points ordered A, B, C and D.
 
@@ -166,16 +185,16 @@ public class LimeLightUtils {
         double arm_l2;
         double x_offset;
         double y_offset;
+
         double theta_offset;
 
-        public KinematicSolver(double arm_l1,double arm_l2,double x_offset,double y_offset){
-            this.arm_l1 = arm_l1;
-            this.arm_l2 = arm_l2;
-            this.x_offset = x_offset;
-            this.y_offset = y_offset;
+        public KinematicSolver(){
+            this.arm_l1 = VisionConst.arm_l1;
+            this.arm_l2 = VisionConst.arm_l2;
+            this.x_offset = VisionConst.x_offset_k;
+            this.y_offset = VisionConst.y_offset_k;
             this.theta_offset = Math.atan(arm_l1/arm_l2);
         }
-
         //takes target point as input and gives extension in inches and yaw in degrees as element 0 and 1 of the array
         public double[] getExtYaw(Point target){
             double theta = 0;
@@ -187,10 +206,9 @@ public class LimeLightUtils {
                 ext = target.x + x_offset - arm_l;
 //            ext = target.x + x_offset - arm_l * Math.cos(Math.toRadians(theta - theta_offset));
             }
-            ext = Math.max(0,Math.min(11,ext));
-            theta = Math.max(-45,Math.min(45,theta));
-//        return new double[]{ext,theta};
-            return new double[]{ext,0};
+            ext = Range.clip(ext,0,VisionConst.bot_ext_limit);
+            theta = Range.clip(theta, VisionConst.bot_left_yaw_limit, VisionConst.bot_right_yaw_limit);
+            return new double[]{ext,theta};
         }
     }
     public static class Sample{
@@ -198,8 +216,8 @@ public class LimeLightUtils {
         public int class_id;
         public Point field_pos;
         public boolean orientation;
-        public double wh_ratio;
 
+        public double wh_ratio;
         public Sample(Point field_pos,int class_id,double confidence,boolean orientation,double wh_ratio){
             this.field_pos = field_pos;
             this.class_id = class_id;
@@ -213,6 +231,7 @@ public class LimeLightUtils {
         UPSIDE_DOWN(1),
         RIGHT_90(2),
         LEFT_90(3);
+
         public final int x;
 
         CameraOrientation(int x){this.x = x;}

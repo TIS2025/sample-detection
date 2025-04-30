@@ -67,7 +67,7 @@ public class PerspectiveSolver {
             double k = ((cx2-cx1)*(cx3 - cam_x))/((cx3 - cx1)*(cx2 - cam_x))*(fx3-fx1)/(fx2-fx1);
 
             //
-            field_x = (k*fx2-fx3)/(k-1) + camera_offset;//1 inch offset from object center to the frame corner;
+            field_x = (k*fx2-fx3)/(k-1) + camera_offset;//offset from object center to the frame corner;
             double width = w1 + (w2-w1)/(fx2-fx1)*(field_x-fx1);
             field_y = cam_y/CAMERA_WIDTH*width;
         }
